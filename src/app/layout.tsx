@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import ClientProviders from '@/components/ClientProviders';
 import TopNav from '@/components/TopNav';
 import AgentDock from '@/components/AgentDock';
+import Footer from '@/components/Footer';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ClientProviders>
           <TopNav />
           <main className="max-w-6xl mx-auto px-4 py-8">{children}</main>
+          <Footer /> 
           <AgentDock />
         </ClientProviders>
       </body>
