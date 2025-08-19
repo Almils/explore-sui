@@ -2,73 +2,100 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ConnectButton } from '@mysten/dapp-kit';
+import Button from '@/components/ui/Button';
 
 export default function MobileNav() {
   const [open, setOpen] = useState(false);
 
-  // Lock scroll + ESC to close when open
+  // Close on ESC
   useEffect(() => {
     if (!open) return;
-    const prev = document.documentElement.style.overflow;
-    document.documentElement.style.overflow = 'hidden';
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
     window.addEventListener('keydown', onKey);
-    return () => {
-      document.documentElement.style.overflow = prev;
-      window.removeEventListener('keydown', onKey);
-    };
+    return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
   return (
     <>
-      <button
-        className="md:hidden rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm"
-        onClick={() => setOpen(true)}
-        aria-label="Open menu"
-      >
-        Menu
-      </button>
+      {/* Toggle button visible on small screens */}
+      <div className="md:hidden">
+        <Button
+          onClick={() => setOpen(true)}
+          size="sm"
+          variant="secondary"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-controls="mobile-menu"
+        >
+          Menu
+        </Button>
+      </div>
 
       {open && (
-        // More opaque scrim to hide page content
-        <div
-          className="fixed inset-0 z-50 bg-black/80"
-          role="presentation"
-          onClick={() => setOpen(false)}
-        >
+        <>
+          {/* Scrim: darker so menu stands out */}
           <div
-            className="absolute right-3 top-3 w-[min(90vw,340px)] rounded-3xl border border-white/15 bg-background p-4 shadow-xl"
+            className="fixed inset-0 z-40 bg-black/70"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Panel */}
+          <div
+            id="mobile-menu"
             role="dialog"
-            aria-modal="true"
-            aria-label="Mobile navigation"
-            onClick={(e) => e.stopPropagation()}
+            aria-label="Main menu"
+            className="fixed inset-x-4 top-6 z-50 rounded-2xl border border-white/10 bg-[#0b1020]/95 backdrop-blur p-4 space-y-3"
           >
             <div className="flex items-center justify-between">
-              <div className="text-sm font-medium">Menu</div>
+              <div className="text-sm font-semibold">Navigation</div>
               <button
-                className="text-sm text-muted hover:text-foreground"
                 onClick={() => setOpen(false)}
-                aria-label="Close menu"
+                className="rounded-lg border border-white/15 bg-white/5 px-2 py-1 text-xs hover:bg-white/10"
               >
                 Close
               </button>
             </div>
 
-            <nav className="mt-3 grid gap-1 text-sm">
-              <Link href="/agent" className="rounded-lg px-3 py-2 hover:bg-white/5">AI Agent</Link>
-              <Link href="/explore" className="rounded-lg px-3 py-2 hover:bg-white/5">Explore</Link>
-              <Link href="/walrus" className="rounded-lg px-3 py-2 hover:bg-white/5">Walrus</Link>
-              <Link href="/profile" className="rounded-lg px-3 py-2 hover:bg-white/5">Profile</Link>
-              <Link href="/deepbook" className="text-sm text-foreground/90 hover:text-foreground">DeepBook</Link>
-
+            <nav className="grid gap-2">
+              <Link
+                href="/agent"
+                className="rounded-xl border border-white/10 px-3 py-2 hover:bg-white/5"
+                onClick={() => setOpen(false)}
+              >
+                AI Agent
+              </Link>
+              <Link
+                href="/explore"
+                className="rounded-xl border border-white/10 px-3 py-2 hover:bg-white/5"
+                onClick={() => setOpen(false)}
+              >
+                Explore
+              </Link>
+              <Link
+                href="/walrus"
+                className="rounded-xl border border-white/10 px-3 py-2 hover:bg-white/5"
+                onClick={() => setOpen(false)}
+              >
+                Walrus
+              </Link>
+              <Link
+                href="/deepbook"
+                className="rounded-xl border border-white/10 px-3 py-2 hover:bg-white/5"
+                onClick={() => setOpen(false)}
+              >
+                DeepBook
+              </Link>
+              <Link
+                href="/profile"
+                className="rounded-xl border border-white/10 px-3 py-2 hover:bg-white/5"
+                onClick={() => setOpen(false)}
+              >
+                Profile
+              </Link>
             </nav>
-
-            <div className="mt-4">
-              <ConnectButton connectText="Connect wallet" />
-            </div>
           </div>
-        </div>
+        </>
       )}
     </>
   );
