@@ -1,0 +1,24 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="900">
+      <stop stop-color="#0E1530"/><stop offset="1" stop-color="#0B1020"/>
+    </linearGradient>
+    <radialGradient id="glow1" cx="20%" cy="0%" r="60%">
+      <stop stop-color="rgba(64,105,255,0.35)"/><stop offset="1" stop-color="rgba(64,105,255,0)"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="90%" cy="20%" r="50%">
+      <stop stop-color="rgba(54,217,217,0.28)"/><stop offset="1" stop-color="rgba(54,217,217,0)"/>
+    </radialGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="1600" y2="900">
+      <stop stop-color="#76E4FF"/><stop offset="1" stop-color="#A88BFF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <ellipse cx="320" cy="60" rx="800" ry="400" fill="url(#glow1)"/>
+  <ellipse cx="1440" cy="180" rx="700" ry="350" fill="url(#glow2)"/>
+  <g transform="translate(700,300)">
+    <rect x="-60" y="-60" width="120" height="120" rx="30" fill="url(#mark)" opacity="0.9"/>
+    <path d="M-30 0c0-16 16-29 35.7-29h12.6C37.0-29 53  -16 53   0c0 16-16 29-35.7 29h-12.6C-14 29-30 42-30 58c0 16 16 29 35.7 29h34.1"
+          stroke="white" stroke-width="12" stroke-linecap="round" fill="none"/>
+  </g>
+</svg>

@@ -1,26 +1,65 @@
+/* src/app/globals.css */
 @import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
+
+/* =========================
+   Theme tokens (dark)
+   ========================= */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-0: #0b1020;
+  --bg-1: #0e1530;
+  --fg: #eaf0ff;
+  --muted: rgba(234, 240, 255, 0.65);
+  --border: rgba(255, 255, 255, 0.12);
+  --card: rgba(255, 255, 255, 0.06);
+
+  --brand-start: #76e4ff;
+  --brand-end: #a88bff;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+html, body { height: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  color: var(--fg);
+  background:
+    radial-gradient(1200px 600px at 20% 0%, rgba(64, 105, 255, 0.22), transparent 60%),
+    radial-gradient(1000px 400px at 90% 20%, rgba(54, 217, 217, 0.16), transparent 60%),
+    linear-gradient(180deg, var(--bg-1), var(--bg-0));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* =========================
+   Utility classes mapped to tokens
+   ========================= */
+.bg-surface      { background-color: var(--card); }
+.border-border   { border-color: var(--border); }
+.text-muted      { color: var(--muted); }
+.text-foreground { color: var(--fg); }
+
+.bg-brand-gradient {
+  background-image: linear-gradient(90deg, var(--brand-start), var(--brand-end));
+}
+
+.shadow-brand {
+  box-shadow:
+    0 8px 30px rgba(118, 228, 255, 0.22),
+    0 4px 12px rgba(168, 139, 255, 0.14);
+}
+
+.animate-float { animation: float 6s ease-in-out infinite; }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+
+/* Optional default card if you ever use class="card" directly */
+.card {
+  background-color: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
 }

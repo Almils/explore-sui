@@ -1,0 +1,11 @@
+<svg width="220" height="40" viewBox="0 0 220 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="brand" x1="0" y1="0" x2="220" y2="40" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#76E4FF"/>
+      <stop offset="1" stop-color="#A88BFF"/>
+    </linearGradient>
+  </defs>
+  <rect width="220" height="40" rx="10" fill="url(#brand)" opacity="0.08"/>
+  <text x="10" y="26" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial"
+        font-size="20" font-weight="700" fill="white" letter-spacing="0.3px">Sui Guide</text>
+</svg>
