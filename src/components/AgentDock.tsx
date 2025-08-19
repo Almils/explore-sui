@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Button from '@/components/ui/Button';
 import AgentQuickActions from '@/components/AgentQuickActions';
 import AgentSendFirst from '@/components/AgentSendFirst';
-import ReceiveFundsCard from '@/components/ReceiveFundsCard';
 import { useActiveAddress } from '@/hooks/useActiveAddress';
 import AddressChip from '@/components/AddressChip';
 import { AGENT_OPEN_EVENT } from '@/lib/AgentBus';
@@ -22,123 +21,74 @@ export default function AgentDock() {
   const { address, source } = useActiveAddress();
   const [net, setNet] = useState<Net>('devnet');
 
-  // NEW: manage an abort controller for the in-flight request
-  const abortRef = useRef<AbortController | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
-
+  // Open via custom event (from "Ask Agent" buttons, etc.)
   useEffect(() => {
     function onOpen(e: any) {
       const prompt = e?.detail?.prompt as string | undefined;
       setOpen(true);
       if (prompt) setInput(prompt);
-      // focus the input for fast follow-ups
-      setTimeout(() => inputRef.current?.focus(), 0);
     }
     window.addEventListener(AGENT_OPEN_EVENT, onOpen as EventListener);
     return () => window.removeEventListener(AGENT_OPEN_EVENT, onOpen as EventListener);
   }, []);
 
+  // ESC closes when open
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && handleClose();
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
 
-  function handleClose() {
-    // If streaming, cancel it first so busy always resets
-    if (abortRef.current) {
-      abortRef.current.abort();
-      abortRef.current = null;
-    }
-    setBusy(false);
-    setOpen(false);
-  }
-
   async function send() {
     const q = input.trim();
     if (!q || busy) return;
-
     setBusy(true);
-    // snapshot messages at send-time to avoid race on quick successive sends
     setMessages((m) => [...m, { role: 'user', content: q }, { role: 'assistant', content: '' }]);
     setInput('');
-
-    const controller = new AbortController();
-    abortRef.current = controller;
 
     try {
       const res = await fetch('/api/agent', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          messages: [...messages, { role: 'user', content: q }],
-          address,
-          source,
-        }),
-        signal: controller.signal,
+        body: JSON.stringify({ messages: [...messages, { role: 'user', content: q }], address, source }),
       });
 
-      const ct = res.headers.get('content-type') || '';
-      if (ct.includes('application/json')) {
-        const data = await res.json().catch(() => ({}));
-        const detail = data?.detail || data?.error || 'Agent backend error';
-        throw new Error(detail);
-      }
-      if (!ct.startsWith('text/')) {
-        const text = await res.text().catch(() => '');
-        throw new Error(text || 'Agent returned unexpected content');
+      if (!res.ok) {
+        const text = await res.clone().text();
+        let detail = text;
+        try {
+          const j = JSON.parse(text);
+          detail = j?.error ? `${j.error}${j.detail ? `: ${j.detail}` : ''}` : text;
+        } catch {}
+        throw new Error(detail || 'Agent API error');
       }
 
       if (!res.body) throw new Error('No response body from Agent API');
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-
-      // Optional: idle safety — if nothing arrives for 20s after some output, cancel.
-      let gotAny = false;
-      let idleTimer: any = null;
-      const armIdle = () => {
-        if (idleTimer) clearTimeout(idleTimer);
-        idleTimer = setTimeout(() => {
-          if (gotAny && abortRef.current === controller) controller.abort();
-        }, 20000);
-      };
-
-      armIdle();
-
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        if (value) {
-          gotAny = true;
-          armIdle();
-          const text = decoder.decode(value, { stream: true });
-          setMessages((prev) => {
-            const out = [...prev];
-            const last = out[out.length - 1];
-            if (last?.role === 'assistant') {
-              out[out.length - 1] = { role: 'assistant', content: last.content + text };
-            }
-            return out;
-          });
-        }
+        const text = decoder.decode(value, { stream: true });
+        setMessages((prev) => {
+          const out = [...prev];
+          const last = out[out.length - 1];
+          if (last?.role === 'assistant') out[out.length - 1] = { role: 'assistant', content: last.content + text };
+          return out;
+        });
       }
-
-      if (idleTimer) clearTimeout(idleTimer);
     } catch (e: any) {
-      const msg = (e?.name === 'AbortError') ? 'Stopped.' : (e?.message || 'Something went wrong talking to the AI.');
-      setMessages((m) => [...m, { role: 'assistant', content: msg }]);
+      setMessages((m) => [...m, { role: 'assistant', content: e?.message || 'Something went wrong talking to the AI.' }]);
     } finally {
-      if (abortRef.current === controller) abortRef.current = null;
-      setBusy(false); // ✅ always re-enable the button
-      // Focus back so user can type immediately
-      setTimeout(() => inputRef.current?.focus(), 0);
+      setBusy(false);
     }
   }
 
   return (
     <>
+      {/* Floating opener — hidden while dock is open so it can't be covered */}
       {!open && (
         <button
           onClick={() => setOpen(true)}
@@ -151,12 +101,17 @@ export default function AgentDock() {
 
       {open && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/30" onClick={handleClose} aria-hidden="true" />
-
+          {/* Darker scrim for readability */}
           <div
-            className="fixed bottom-5 right-5 z-50 w-[min(100vw-2rem,420px)] h-[min(85vh,720px)] rounded-3xl border border-border bg-surface backdrop-blur shadow-xl overflow-hidden flex flex-col"
+            className="fixed inset-0 z-40 bg-black/70"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Opaque-ish panel */}
+          <div
+            className="fixed bottom-5 right-5 z-50 w-[min(100vw-2rem,420px)] h-[min(85vh,720px)] rounded-3xl border border-white/12 bg-[#0b1020]/98 backdrop-blur-sm shadow-[0_12px_48px_rgba(0,0,0,0.65)] overflow-hidden flex flex-col"
             role="dialog"
-            aria-modal="true"
             aria-label="AI Agent"
           >
             {/* Header */}
@@ -181,8 +136,8 @@ export default function AgentDock() {
                   <div className="text-xs text-muted">No account yet</div>
                 )}
                 <button
-                  onClick={handleClose}
-                  className="rounded-lg border border-white/15 bg-white/5 px-2 py-1 text-xs hover:bg-white/10"
+                  onClick={() => setOpen(false)}
+                  className="rounded-lg border border-white/15 bg-white/8 px-2 py-1 text-xs hover:bg-white/12"
                   aria-label="Close Agent"
                 >
                   Close
@@ -190,10 +145,10 @@ export default function AgentDock() {
               </div>
             </div>
 
-            {/* Safety banner */}
+            {/* Mainnet warning */}
             {net === 'mainnet' && (
               <div className="px-4 pt-2 pb-0 shrink-0">
-                <div className="rounded-xl border border-white/15 bg-white/5 p-2 text-[12px] text-neutral-300">
+                <div className="rounded-xl border border-white/15 bg-white/[0.07] p-2 text-[12px] text-neutral-300">
                   Mainnet selected — actions may use real assets. Make sure your wallet is on <b>Mainnet</b> when signing.
                 </div>
               </div>
@@ -202,12 +157,11 @@ export default function AgentDock() {
             {/* Body */}
             <div className="px-4 py-3 flex-1 overflow-y-auto space-y-3">
               <AgentQuickActions net={net} />
-              <ReceiveFundsCard />
               <AgentSendFirst net={net} />
 
               <div className="space-y-3">
                 {messages.map((m, i) => (
-                  <div key={i} className="rounded-2xl border border-white/10 p-3">
+                  <div key={i} className="rounded-2xl border border-white/10 p-3 bg-white/[0.02]">
                     <div className="text-[10px] uppercase tracking-wide text-muted mb-1">{m.role}</div>
                     <div className="text-sm whitespace-pre-wrap">
                       {m.content || (busy && i === messages.length - 1 ? '…' : '')}
@@ -217,30 +171,16 @@ export default function AgentDock() {
               </div>
             </div>
 
-            {/* Input row */}
+            {/* Input */}
             <div className="p-4 border-t border-white/10 shrink-0 flex gap-2">
               <input
-                ref={inputRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && !busy && input.trim() && send()}
+                onKeyDown={(e) => e.key === 'Enter' && send()}
                 placeholder={`Ask anything… e.g., “fund my ${net} wallet”`}
                 className="flex-1 rounded-lg bg-neutral-900 border border-white/10 px-3 py-2 text-sm text-white placeholder:text-neutral-500"
               />
-              {!busy ? (
-                <Button onClick={send} disabled={!input.trim()}>
-                  Send
-                </Button>
-              ) : (
-                <Button
-                  variant="secondary"
-                  onClick={() => {
-                    abortRef.current?.abort();
-                  }}
-                >
-                  Stop
-                </Button>
-              )}
+              <Button onClick={send} disabled={busy}>Send</Button>
             </div>
           </div>
         </>

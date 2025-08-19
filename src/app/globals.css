@@ -63,3 +63,17 @@ body {
   border: 1px solid var(--border);
   border-radius: 1rem;
 }
+
+/* globals.css */
+body.bg-mesh {
+  position: relative;
+}
+body.bg-mesh::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;          /* sits behind content */
+  background: url('/brand-bg.svg') center / cover no-repeat;
+  opacity: 0.16;        /* tune here */
+}
+
