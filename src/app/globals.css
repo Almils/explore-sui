@@ -64,16 +64,38 @@ body {
   border-radius: 1rem;
 }
 
-/* globals.css */
+
+
+/* Ensure the mesh stays behind everything and is dimmed consistently */
 body.bg-mesh {
   position: relative;
 }
+
 body.bg-mesh::before {
+  /* The mesh image layer */
   content: '';
   position: fixed;
   inset: 0;
-  z-index: -1;          /* sits behind content */
+  z-index: -2;
   background: url('/brand-bg.svg') center / cover no-repeat;
-  opacity: 0.16;        /* tune here */
+  /* If you want to tweak globally without touching the SVG again: */
+  opacity: var(--mesh-opacity, 0.10);
 }
+
+body.bg-mesh::after {
+  /* A dark overlay to ensure foreground readability on all pages */
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  /* Combo of subtle radial + linear to avoid flat gray */
+  background:
+    radial-gradient(1200px 800px at 70% 10%,
+        rgba(0,0,0,0.00) 0%,
+        rgba(0,0,0,0.15) 45%,
+        rgba(0,0,0,0.35) 100%),
+    linear-gradient(0deg, rgba(0,0,0,0.22), rgba(0,0,0,0.22));
+  pointer-events: none;
+}
+
 
